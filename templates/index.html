@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Biomarker Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <h1>🧬 Biomarker Dashboard</h1>
+    <p class="subtitle">Clinical Health Marker Analysis</p>
+
+    <!-- STEP INDICATOR -->
+    <div class="steps">
+        <div class="step active" id="step-dot-1">1</div>
+        <div class="step-line"></div>
+        <div class="step" id="step-dot-2">2</div>
+        <div class="step-line"></div>
+        <div class="step" id="step-dot-3">3</div>
+    </div>
+
+    <!-- PAGE 1: Health Markers -->
+    <div class="container" id="page-1">
+        <p class="section-title">Step 1 — Health Markers</p>
+        <label>Glucose (mg/dL)
+            <input type="number" id="glucose" placeholder="Normal: 70 – 100">
+        </label>
+        <label>BMI
+            <input type="number" id="bmi" placeholder="Normal: 18.5 – 24.9" step="0.1">
+        </label>
+        <label>Systolic Blood Pressure (mmHg)
+            <input type="number" id="bp" placeholder="Normal: 90 – 120">
+        </label>
+        <label>Cholesterol (mg/dL)
+            <input type="number" id="cholesterol" placeholder="Normal: 0 – 200">
+        </label>
+        <button onclick="goToPage2()">Next →</button>
+    </div>
+
+    <!-- PAGE 2: Personal Info -->
+    <div class="container hidden" id="page-2">
+        <p class="section-title">Step 2 — Personal Information</p>
+        <label>Full Name
+            <input type="text" id="name" placeholder="e.g. John Doe">
+        </label>
+        <label>Age
+            <input type="number" id="age" placeholder="e.g. 28">
+        </label>
+        <label>Gender
+            <select id="gender">
+                <option value="">Select...</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+        </label>
+        <label>Any known conditions (optional)
+            <input type="text" id="conditions" placeholder="e.g. Diabetes, Hypertension">
+        </label>
+        <div style="display:flex; gap:12px;">
+            <button class="secondary" onclick="goToPage1()">← Back</button>
+            <button onclick="runAnalysis()">Run Analysis →</button>
+        </div>
+    </div>
+
+    <!-- PAGE 3: Results Dashboard -->
+    <div class="container hidden" id="page-3">
+        <div id="patient-header"></div>
+        <p class="section-title" style="margin-top: 24px;">Analysis Results</p>
+        <div id="results"></div>
+        <canvas id="bioChart" style="margin-top: 30px;"></canvas>
+        <button class="secondary" style="margin-top: 24px;" onclick="resetApp()">← Start Over</button>
+    </div>
+
+    <script>
+        let markerData = {};
+
+        // ── Navigation ──────────────────────────────────────
+
+        function goToPage2() {
+            const glucose = document.getElementById("glucose").value;
+            const bmi = document.getElementById("bmi").value;
+            const bp = document.getElementById("bp").value;
+            const cholesterol = document.getElementById("cholesterol").value;
+
+            if (!glucose || !bmi || !bp || !cholesterol) {
+                alert("Please fill in all health markers.");
+                return;
+            }
+
+            markerData = { glucose, bmi, bp, cholesterol };
+            showPage(2);
+        }
+
+        function goToPage1() { showPage(1); }
+
+        async function runAnalysis() {
+            const name = document.getElementById("name").value;
+            const age = document.getElementById("age").value;
+            const gender = document.getElementById("gender").value;
+            const conditions = document.getElementById("conditions").value;
+
+            if (!name || !age || !gender) {
+                alert("Please fill in your name, age, and gender.");
+                return;
+            }
+
+            const response = await fetch("/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(markerData)
+            });
+
+            const results = await response.json();
+            showPage(3);
+            renderDashboard(results, { name, age, gender, conditions });
+        }
+
+        function resetApp() {
+            document.querySelectorAll("input").forEach(i => i.value = "");
+            document.getElementById("gender").value = "";
+            showPage(1);
+        }
+
+        function showPage(n) {
+            document.getElementById("page-1").classList.add("hidden");
+            document.getElementById("page-2").classList.add("hidden");
+            document.getElementById("page-3").classList.add("hidden");
+            document.getElementById("page-" + n).classList.remove("hidden");
+
+            document.getElementById("step-dot-1").classList.remove("active", "done");
+            document.getElementById("step-dot-2").classList.remove("active", "done");
+            document.getElementById("step-dot-3").classList.remove("active", "done");
+
+            for (let i = 1; i < n; i++) {
+                document.getElementById("step-dot-" + i).classList.add("done");
+            }
+            document.getElementById("step-dot-" + n).classList.add("active");
+        }
+
+        // ── Dashboard Rendering ──────────────────────────────
+
+        let chart = null;
+
+        function renderDashboard(results, patient) {
+            const labels = {
+                glucose: "Glucose",
+                bmi: "BMI",
+                bp: "Blood Pressure",
+                cholesterol: "Cholesterol"
+            };
+
+            // Patient header
+            document.getElementById("patient-header").innerHTML = `
+                <div class="patient-card">
+                    <div class="patient-avatar">${patient.name.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="patient-name">${patient.name}</div>
+                        <div class="patient-meta">${patient.age} yrs · ${patient.gender}${patient.conditions ? " · " + patient.conditions : ""}</div>
+                    </div>
+                </div>
+            `;
+
+            // Result cards
+            let html = "";
+            for (const [marker, info] of Object.entries(results)) {
+                const isNormal = info.status.includes("Normal");
+                const cardClass = isNormal ? "normal" : "abnormal";
+                const statusText = isNormal ? "✓ Normal" : "✗ Out of Range";
+                html += `
+                    <div class="result-card ${cardClass}">
+                        <span class="marker-name">${labels[marker] || marker}</span>
+                        <span class="marker-value">${info.value} ${info.unit}</span>
+                        <span class="marker-status">${statusText}</span>
+                    </div>`;
+            }
+            html += `<p class="range-hint">Reference ranges based on standard clinical guidelines.</p>`;
+            document.getElementById("results").innerHTML = html;
+
+            // Chart
+            const chartLabels = Object.keys(results).map(m => labels[m] || m);
+            const chartValues = Object.values(results).map(i => i.value);
+            const maxValues = Object.values(results).map(i => i.max);
+            const barColors = Object.values(results).map(i =>
+                i.status.includes("Normal") ? "#2d6a4f" : "#c0392b"
+            );
+
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById("bioChart"), {
+                type: "bar",
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: "Your Value",
+                            data: chartValues,
+                            backgroundColor: barColors,
+                            borderRadius: 8
+                        },
+                        {
+                            label: "Max Normal",
+                            data: maxValues,
+                            backgroundColor: "rgba(0,0,0,0.07)",
+                            borderRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: "top" },
+                        title: {
+                            display: true,
+                            text: "Your Values vs Normal Range",
+                            color: "#1b4332",
+                            font: { size: 14, weight: "600" }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
