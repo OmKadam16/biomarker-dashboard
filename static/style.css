@@ -479,3 +479,10 @@ button.secondary:hover {
         padding: 0 16px;
     }
 }
+
+/* Chart mobile fix */
+@media (max-width: 600px) {
+    #bioChart {
+        max-height: 250px;
+    }
+}

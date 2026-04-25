@@ -205,34 +205,34 @@
 
             // Patient header
             // Score color
-let scoreColor = "#2d6a4f";
-let scoreLabel = "Excellent";
-if (score < 50) { scoreColor = "#c0392b"; scoreLabel = "Needs Attention"; }
-else if (score < 75) { scoreColor = "#e67e22"; scoreLabel = "Fair"; }
+            let scoreColor = "#2d6a4f";
+            let scoreLabel = "Excellent";
+            if (score < 50) { scoreColor = "#c0392b"; scoreLabel = "Needs Attention"; }
+            else if (score < 75) { scoreColor = "#e67e22"; scoreLabel = "Fair"; }
 
-document.getElementById("patient-header").innerHTML = `
-    <div class="patient-card">
-        <div class="patient-avatar">${patient.name.charAt(0).toUpperCase()}</div>
-        <div>
-            <div class="patient-name">${patient.name}</div>
-            <div class="patient-meta">${patient.age} yrs · ${patient.gender}${patient.conditions ? " · " + patient.conditions : ""}</div>
-        </div>
-    </div>
-    <div class="score-card">
-        <div class="score-label">Health Score</div>
-        <div class="score-ring">
-            <svg viewBox="0 0 120 120" width="120" height="120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#e8e0d0" stroke-width="10"/>
-                <circle cx="60" cy="60" r="50" fill="none" stroke="${scoreColor}" stroke-width="10"
-                    stroke-dasharray="${(score / 100) * 314} 314"
-                    stroke-linecap="round"
-                    transform="rotate(-90 60 60)"/>
-            </svg>
-            <div class="score-number" style="color: ${scoreColor}">${score}</div>
-        </div>
-        <div class="score-status" style="color: ${scoreColor}">${scoreLabel}</div>
-    </div>
-`;
+            document.getElementById("patient-header").innerHTML = `
+                <div class="patient-card">
+                    <div class="patient-avatar">${patient.name.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="patient-name">${patient.name}</div>
+                        <div class="patient-meta">${patient.age} yrs · ${patient.gender}${patient.conditions ? " · " + patient.conditions : ""}</div>
+                    </div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">Health Score</div>
+                    <div class="score-ring">
+                        <svg viewBox="0 0 120 120" width="120" height="120">
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#e8e0d0" stroke-width="10"/>
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="${scoreColor}" stroke-width="10"
+                                stroke-dasharray="${(score / 100) * 314} 314"
+                                stroke-linecap="round"
+                                transform="rotate(-90 60 60)"/>
+                        </svg>
+                        <div class="score-number" style="color: ${scoreColor}">${score}</div>
+                    </div>
+                    <div class="score-status" style="color: ${scoreColor}">${scoreLabel}</div>
+                </div>
+            `;
 
             // Result cards
             let html = "";
@@ -280,6 +280,8 @@ document.getElementById("patient-header").innerHTML = `
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
                     plugins: {
                         legend: { position: "top" },
                         title: {
