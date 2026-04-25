@@ -292,3 +292,46 @@ button.secondary:hover {
         flex-direction: column;
     }
 }
+
+/* Health Score */
+.score-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 24px 0 8px;
+    padding: 24px;
+    background: #faf7f2;
+    border: 1px solid #e8e0d0;
+    border-radius: 16px;
+}
+
+.score-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #888;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.score-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.score-number {
+    position: absolute;
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.score-status {
+    margin-top: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
