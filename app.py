@@ -100,7 +100,11 @@ def signup():
         c = conn.cursor()
         c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed))
         conn.commit()
+        c.execute("SELECT id, email FROM users WHERE email = ?", (email,))
+        row = c.fetchone()
         conn.close()
+        user = User(row[0], row[1])
+        login_user(user)
         return jsonify({"success": True})
     except sqlite3.IntegrityError:
         return jsonify({"success": False, "error": "Email already exists"})
