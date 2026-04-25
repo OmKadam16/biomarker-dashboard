@@ -3,6 +3,12 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import sqlite3
 import bcrypt
 from datetime import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from flask import send_file
+import io
 
 app = Flask(__name__)
 app.secret_key = "biomarker_secret_key_2026"
@@ -19,6 +25,12 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS users "
         "(id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "email TEXT UNIQUE, password TEXT)"
+    )
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS profiles "
+        "(id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "user_id INTEGER UNIQUE, name TEXT, birthdate TEXT, gender TEXT, conditions TEXT, "
+        "FOREIGN KEY(user_id) REFERENCES users(id))"
     )
     c.execute(
         "CREATE TABLE IF NOT EXISTS analyses "
@@ -188,6 +200,128 @@ def history():
             "cholesterol": row[6], "score": row[7], "date": row[8]
         })
     return jsonify(entries)
+
+@app.route("/export-pdf", methods=["POST"])
+@login_required
+def export_pdf():
+    data = request.get_json()
+    patient = data.get("patient", {})
+    results = data.get("results", {})
+    score = data.get("score", 0)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Title
+    title_style = ParagraphStyle("title", fontSize=22, fontName="Helvetica-Bold", textColor=colors.HexColor("#1b4332"), spaceAfter=4)
+    subtitle_style = ParagraphStyle("subtitle", fontSize=10, fontName="Helvetica", textColor=colors.HexColor("#888888"), spaceAfter=20)
+    story.append(Paragraph("🧬 Biomarker Health Dashboard", title_style))
+    story.append(Spacer(1, 6))
+    story.append(Paragraph("Clinical Health Marker Analysis Report", subtitle_style))
+    story.append(Spacer(1, 10))
+
+    # Patient Info
+    info_style = ParagraphStyle("info", fontSize=11, fontName="Helvetica", textColor=colors.HexColor("#2d2d2d"), spaceAfter=6)
+    header_style = ParagraphStyle("header", fontSize=10, fontName="Helvetica-Bold", textColor=colors.HexColor("#2d6a4f"), spaceAfter=8, spaceBefore=16)
+    story.append(Paragraph("PATIENT INFORMATION", header_style))
+    story.append(Paragraph(f"Name: {patient.get('name', '')}", info_style))
+    story.append(Paragraph(f"Age: {patient.get('age', '')}  |  Gender: {patient.get('gender', '')}", info_style))
+    if patient.get("conditions"):
+        story.append(Paragraph(f"Known Conditions: {patient.get('conditions')}", info_style))
+    story.append(Paragraph(f"Health Score: {score}/100", info_style))
+    story.append(Spacer(1, 16))
+
+    # Results Table
+    story.append(Paragraph("ANALYSIS RESULTS", header_style))
+    table_data = [["Marker", "Your Value", "Normal Range", "Status"]]
+    labels = {"glucose": "Glucose", "bmi": "BMI", "bp": "Blood Pressure", "cholesterol": "Cholesterol"}
+    for marker, info in results.items():
+        status = "✓ Normal" if "Normal" in info["status"] else "✗ Out of Range"
+        normal_range = f"{info['min']} – {info['max']} {info['unit']}"
+        table_data.append([
+            labels.get(marker, marker),
+            f"{info['value']} {info['unit']}",
+            normal_range,
+            status
+        ])
+
+    table = Table(table_data, colWidths=[140, 120, 150, 120])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2d6a4f")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
+        ("TOPPADDING", (0, 0), (-1, 0), 10),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#faf7f2")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.HexColor("#faf7f2"), colors.white]),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 1), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 1), (-1, -1), 8),
+        ("TOPPADDING", (0, 1), (-1, -1), 8),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e8e0d0")),
+        ("ROUNDEDCORNERS", [4, 4, 4, 4]),
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 20))
+
+    # Footer
+    footer_style = ParagraphStyle("footer", fontSize=8, fontName="Helvetica", textColor=colors.HexColor("#aaaaaa"))
+    story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y')} · Reference ranges based on standard clinical guidelines.", footer_style))
+
+    doc.build(story)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name="biomarker_report.pdf", mimetype="application/pdf")
+
+@app.route("/get-profile")
+@login_required
+def get_profile():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("SELECT name, birthdate, gender, conditions FROM profiles WHERE user_id = ?", (current_user.id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        # Calculate age from birthdate
+        from datetime import date
+        birthdate = datetime.strptime(row[1], "%Y-%m-%d").date()
+        today = date.today()
+        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        return jsonify({
+            "found": True,
+            "name": row[0],
+            "birthdate": row[1],
+            "age": age,
+            "gender": row[2],
+            "conditions": row[3]
+        })
+    return jsonify({"found": False})
+
+@app.route("/save-profile", methods=["POST"])
+@login_required
+def save_profile():
+    data = request.get_json()
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO profiles (user_id, name, birthdate, gender, conditions) "
+        "VALUES (?, ?, ?, ?, ?) "
+        "ON CONFLICT(user_id) DO UPDATE SET "
+        "name=excluded.name, birthdate=excluded.birthdate, "
+        "gender=excluded.gender, conditions=excluded.conditions",
+        (
+            current_user.id,
+            data.get("name"),
+            data.get("birthdate"),
+            data.get("gender"),
+            data.get("conditions", "")
+        )
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
 
 init_db()
 
