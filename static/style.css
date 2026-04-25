@@ -383,3 +383,56 @@ button.secondary:hover {
 .history-table tr:hover td {
     background: #faf7f2;
 }
+
+/* Auth Pages */
+.auth-container {
+    max-width: 440px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(27, 67, 50, 0.08);
+    border: 1px solid #e8e0d0;
+}
+
+.auth-container label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.auth-container input {
+    padding: 14px 16px;
+    background: #faf7f2;
+    border: 1px solid #ddd6c8;
+    border-radius: 10px;
+    font-size: 1rem;
+    color: #2d2d2d;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+    width: 100%;
+}
+
+.auth-container input:focus {
+    border-color: #2d6a4f;
+    box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+}
+
+.auth-divider {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.auth-divider a {
+    color: #2d6a4f;
+    font-weight: 700;
+    text-decoration: none;
+}

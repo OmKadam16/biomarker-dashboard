@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up - Biomarker Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>🧬 Biomarker Dashboard</h1>
+    <p class="subtitle">Clinical Health Marker Analysis</p>
+
+    <div class="auth-container">
+        <p class="section-title">Create Account</p>
+
+        <label>Email
+            <input type="email" id="email" placeholder="your@email.com">
+        </label>
+        <label>Password
+            <input type="password" id="password" placeholder="••••••••">
+        </label>
+        <label>Confirm Password
+            <input type="password" id="confirm" placeholder="••••••••">
+        </label>
+
+        <div id="error-msg" style="color:#c0392b; font-size:0.85rem; margin-top:8px; display:none;"></div>
+
+        <button onclick="signup()">Create Account</button>
+
+        <p class="auth-divider">Already have an account? <a href="/login">Login</a></p>
+    </div>
+
+    <script>
+        async function signup() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const confirm = document.getElementById("confirm").value;
+
+            if (!email || !password || !confirm) {
+                showError("Please fill in all fields.");
+                return;
+            }
+
+            if (password !== confirm) {
+                showError("Passwords do not match.");
+                return;
+            }
+
+            if (password.length < 6) {
+                showError("Password must be at least 6 characters.");
+                return;
+            }
+
+            const response = await fetch("/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                window.location.href = "/login";
+            } else {
+                showError(data.error);
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById("error-msg");
+            el.textContent = msg;
+            el.style.display = "block";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Biomarker Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>🧬 Biomarker Dashboard</h1>
+    <p class="subtitle">Clinical Health Marker Analysis</p>
+
+    <div class="auth-container">
+        <p class="section-title">Login</p>
+
+        <label>Email
+            <input type="email" id="email" placeholder="your@email.com">
+        </label>
+        <label>Password
+            <input type="password" id="password" placeholder="••••••••">
+        </label>
+
+        <div id="error-msg" style="color:#c0392b; font-size:0.85rem; margin-top:8px; display:none;"></div>
+
+        <button onclick="login()">Login</button>
+
+        <p class="auth-divider">Don't have an account? <a href="/signup">Sign up</a></p>
+    </div>
+
+    <script>
+        async function login() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            if (!email || !password) {
+                showError("Please fill in all fields.");
+                return;
+            }
+
+            const response = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                window.location.href = "/";
+            } else {
+                showError(data.error);
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById("error-msg");
+            el.textContent = msg;
+            el.style.display = "block";
+        }
+    </script>
+</body>
+</html>
