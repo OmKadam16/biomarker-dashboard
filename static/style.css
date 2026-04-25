@@ -232,3 +232,63 @@ button.secondary:hover {
         transform: translateY(0);
     }
 }
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    body {
+        padding: 24px 16px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.75rem;
+        margin-bottom: 20px;
+    }
+
+    .steps {
+        margin-bottom: 20px;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .step-line {
+        width: 40px;
+    }
+
+    .container {
+        padding: 24px 20px;
+    }
+
+    .result-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .marker-name,
+    .marker-value,
+    .marker-status {
+        width: 100%;
+        text-align: left;
+    }
+
+    .patient-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .patient-avatar {
+        margin: 0 auto;
+    }
+
+    div[style*="display:flex"] {
+        flex-direction: column;
+    }
+}
