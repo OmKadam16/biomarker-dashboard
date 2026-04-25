@@ -335,3 +335,51 @@ button.secondary:hover {
     font-weight: 700;
     letter-spacing: 0.5px;
 }
+
+.history-table-wrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid #e8e0d0;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    min-width: 600px;
+}
+
+.history-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #f0f8f4;
+    color: #2d6a4f;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #e8e0d0;
+    border-right: 1px solid #e8e0d0;
+}
+
+.history-table th:last-child {
+    border-right: none;
+}
+
+.history-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0ebe0;
+    border-right: 1px solid #f0ebe0;
+    color: #444;
+}
+
+.history-table td:last-child {
+    border-right: none;
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+.history-table tr:hover td {
+    background: #faf7f2;
+}

@@ -71,6 +71,12 @@
         <p class="section-title" style="margin-top: 24px;">Analysis Results</p>
         <div id="results"></div>
         <canvas id="bioChart" style="margin-top: 30px;"></canvas>
+
+        <div id="bioChart" style="margin-top: 32px;">
+            <p class="section-title">Past Analyses</p>
+            <div id="history-table"></div>
+        </div>
+
         <button class="secondary" style="margin-top: 24px;" onclick="resetApp()">← Start Over</button>
     </div>
 
@@ -110,7 +116,7 @@
             const response = await fetch("/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(markerData)
+                body: JSON.stringify({ ...markerData, patient: { name, age, gender, conditions } })
             });
 
             const { results, score } = await response.json();
@@ -241,6 +247,49 @@ document.getElementById("patient-header").innerHTML = `
                     scales: { y: { beginAtZero: true } }
                 }
             });
+
+            fetch("/history")
+                .then(res => res.json())
+                .then(entries => {
+                    if (entries.length === 0) {
+                        document.getElementById("history-table").innerHTML = "<p class='range-hint'>No past analyses yet.</p>";
+                    }
+                    let table = `
+                        <div class="history-table-wrapper">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Name</th>
+                                    <th>Age</th>
+                                    <th>Glucose</th>
+                                    <th>BMI</th>
+                                    <th>BP</th>
+                                    <th>Cholesterol</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    entries.forEach(e => {
+                        let scoreColor = e.score >= 75 ? "#2d6a4f" : e.score >= 50 ? "#e67e22" : "#c0392b";
+                        table += `
+                            <tr>
+                                <td>${e.date}</td>
+                                <td>${e.name}</td>
+                                <td>${e.age}</td>
+                                <td>${e.glucose}</td>
+                                <td>${e.bmi}</td>
+                                <td>${e.bp}</td>
+                                <td>${e.cholesterol}</td>
+                                <td style="font-weight: 700; color: ${scoreColor}">${e.score}</td>
+                            </tr>
+                        `;
+                    });
+                    table += `</tbody></table></div>`;
+                    document.getElementById("history-table").innerHTML = table;
+                
+                });
         }
     </script>
 </body>

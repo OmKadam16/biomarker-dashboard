@@ -1,4 +1,7 @@
 from flask import Flask, render_template, request, jsonify
+import sqlite3
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -8,6 +11,19 @@ NORMAL_RANGES = {
     "bp":          {"min":90, "max": 120, "unit": "mmHg"},
     "cholesterol": {"min":0, "max": 200, "unit": "mg/dL"},     
 }
+
+def init_db():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute(
+        "CREATE TABLE IF NOT EXISTS analyses "
+        "(id INTEGER PRIMARY KEY AUTOINCREMENT, "
+        "name TEXT, age INTEGER, gender TEXT, conditions TEXT, "
+        "glucose REAL, bmi REAL, bp REAL, cholesterol REAL, "
+        "score INTEGER, date TEXT)"
+    )
+    conn.commit()
+    conn.close()
 
 def get_status(value, min_val, max_val):
     if value < min_val or value > max_val:
@@ -54,8 +70,54 @@ def analyze():
         }
 
     score = calculate_score(results)
+
+    patient = data.get("patient", {})
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute('''
+       INSERT INTO analyses (name, age, gender, conditions, glucose, bmi, bp, cholesterol, score, date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+    ''', (
+        patient.get("name", ""),
+        patient.get("age", 0),
+        patient.get("gender", ""),
+        patient.get("conditions", ""),
+        float(data.get("glucose", 0)),
+        float(data.get("bmi", 0)),
+        float(data.get("bp", 0)),
+        float(data.get("cholesterol", 0)),
+        score,
+        datetime.now().strftime("%b %d, %Y")
+    ))
+    conn.commit()
+    conn.close()
+
     return jsonify({"results": results, "score": score})
 
+@app.route("/history", methods=["GET"])
+def history():
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    c.execute("SELECT name, age, gender, glucose, bmi, bp, cholesterol, score, date FROM analyses ORDER BY id DESC LIMIT 10")
+    rows = c.fetchall()
+    conn.close()
+
+    entries = []
+    for row in rows:
+        entries.append({
+            "name": row[0],
+            "age": row[1],
+            "gender": row[2],
+            "glucose": row[3],
+            "bmi": row[4],
+            "bp": row[5],
+            "cholesterol": row[6],
+            "score": row[7],
+            "date": row[8]
+        })
+    return jsonify(entries)
+
+init_db()
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
